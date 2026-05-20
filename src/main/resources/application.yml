@@ -1,0 +1,88 @@
+spring:
+  application:
+    name: ai-agent-langchain4j
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+
+# ========== LLM 配置 ==========
+llm:
+  dashscope:
+    api-key: ${DASHSCOPE_API_KEY:your-api-key-here}
+    base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    model-name: qwen-max
+
+# ========== Milvus 向量数据库 ==========
+milvus:
+  enabled: false                  # 是否启用 Milvus，false 则使用内存向量库
+  host: ${MILVUS_HOST:localhost}
+  port: ${MILVUS_PORT:19530}
+  collection-name: rag_documents
+  dimension: 384                 # text-embedding-v3 维度
+  index-type: IVF_FLAT
+  nprobe: 10
+
+# ========== Redis 分布式缓存 ==========
+redis:
+  enabled: false                  # 是否启用 Redis，false 则不使用
+  host: ${REDIS_HOST:localhost}
+  port: ${REDIS_PORT:6379}
+  password: ${REDIS_PASSWORD:}
+  database: 0
+
+# ========== 聊天记忆配置 ==========
+chat-memory:
+  base-dir: ${user.dir}/chat-memory
+  max-messages: 20
+  store-type: file               # file / memory / redis（需开启 redis.enabled）
+
+# ========== RAG 配置 ==========
+rag:
+  document-dir: ${user.dir}/documents
+  top-k: 5                       # 最终返回给 LLM 的文档数
+  recall-k: 20                   # 召回阶段候选池大小（供重排序）
+  similarity-threshold: 0.7
+  smart-split: true              # 章节感知的智能分割
+
+  # 重排序
+  rerank-enabled: true
+  rerank-strategy: HYBRID_SCORE  # HYBRID_SCORE / MMR / LLM_CROSS_SCORE
+
+  # Embedding 本地 LRU 缓存
+  cache-enabled: true
+
+  # Embedding Redis 分布式缓存（需开启 redis.enabled）
+  redis-cache:
+    enabled: true
+
+  # 语义结果缓存（相似查询直接返回）
+  semantic-cache:
+    enabled: true
+    threshold: 0.9               # 语义相似度阈值
+
+  # 流水线并行执行
+  parallel-enabled: true
+
+# ========== Agent 配置 ==========
+agent:
+  mode: AUTO                     # AUTO / REACT / PLAN_AND_EXECUTE
+  max-iterations: 10
+  enable-loop-detection: true
+  loop-threshold: 2              # 相同参数调用次数阈值
+
+# ========== 工具限流配置 ==========
+tool:
+  rate-limit:
+    enabled: true                # 开启工具调用限流保护
+  limit:
+    concurrency: 5               # 单工具最大并发数
+    qps: 10                      # 单工具每秒调用上限
+  circuit-breaker:
+    fail-threshold: 5            # 连续失败阈值
+    recovery-seconds: 30         # 熔断后恢复时间
+
+server:
+  port: 8081
