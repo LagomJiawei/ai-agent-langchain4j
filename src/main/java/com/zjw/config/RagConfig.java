@@ -1,5 +1,7 @@
-package com.zjw.rag;
+package com.zjw.config;
 
+import com.zjw.rag.DocumentPreprocessor;
+import com.zjw.rag.SmartDocumentSplitter;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.loader.FileSystemDocumentLoader;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
@@ -10,7 +12,6 @@ import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 import java.io.File;
@@ -27,26 +28,8 @@ import java.util.List;
 @Configuration
 public class RagConfig {
 
-    @Value("${rag.document-dir:${user.dir}/documents}")
-    private String documentDir;
-
-    @Value("${rag.top-k:3}")
-    private int topK;
-
-    @Value("${rag.similarity-threshold:0.7}")
-    private double similarityThreshold;
-
-    @Value("${rag.smart-split:true}")
-    private boolean smartSplitEnabled;
-
-    @Value("${rag.recall-k:10}")
-    private int recallK;
-
-    @Value("${rag.rerank-enabled:true}")
-    private boolean rerankEnabled;
-
-    @Value("${rag.rerank-strategy:HYBRID_SCORE}")
-    private String rerankStrategy;
+    @Resource
+    private RagProperties ragProperties;
 
     @Resource
     private EmbeddingStore<TextSegment> embeddingStore;
@@ -62,15 +45,15 @@ public class RagConfig {
 
     @PostConstruct
     public void initRagDocuments() {
-        File dir = new File(documentDir);
+        File dir = new File(ragProperties.getDocumentDir());
         if (!dir.exists()) {
             dir.mkdirs();
-            log.info("RAG 文档目录已创建: {}", documentDir);
+            log.info("RAG 文档目录已创建: {}", ragProperties.getDocumentDir());
             return;
         }
 
         List<Document> documents = FileSystemDocumentLoader.loadDocumentsRecursively(
-                documentDir,
+                ragProperties.getDocumentDir(),
                 (Path path) -> path.toString().toLowerCase().endsWith(".txt") ||
                         path.toString().toLowerCase().endsWith(".md") ||
                         path.toString().toLowerCase().endsWith(".pdf")
@@ -83,20 +66,14 @@ public class RagConfig {
         }
     }
 
-    /**
-     * 向量化并存储文档（支持智能预处理和分割）
-     */
     public void ingestDocuments(List<Document> documents) {
         log.info("开始处理 {} 个文档...", documents.size());
 
-        // 1. 文档预处理
-        List<Document> processedDocs = smartSplitEnabled
+        List<Document> processedDocs = ragProperties.isSmartSplit()
                 ? documentPreprocessor.preprocess(documents)
                 : documents;
 
-        // 2. 文档分割与向量化
-        if (smartSplitEnabled) {
-            // 智能分割流程
+        if (ragProperties.isSmartSplit()) {
             List<TextSegment> allSegments = new ArrayList<>();
             for (Document doc : processedDocs) {
                 String fileName = doc.metadata().getString("file_name");
@@ -110,7 +87,6 @@ public class RagConfig {
             embeddingStore.addAll(embeddingModel.embedAll(allSegments).content(), allSegments);
             log.info("RAG 文档向量化完成，总计 {} 个分段", allSegments.size());
         } else {
-            // 传统流程
             EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
                     .documentSplitter(DocumentSplitters.recursive(500, 50))
                     .embeddingModel(embeddingModel)
@@ -122,23 +98,23 @@ public class RagConfig {
     }
 
     public int getTopK() {
-        return topK;
+        return ragProperties.getTopK();
     }
 
     public double getSimilarityThreshold() {
-        return similarityThreshold;
+        return ragProperties.getSimilarityThreshold();
     }
 
     public int getRecallK() {
-        return recallK;
+        return ragProperties.getRecallK();
     }
 
     public boolean isRerankEnabled() {
-        return rerankEnabled;
+        return ragProperties.isRerankEnabled();
     }
 
     public String getRerankStrategy() {
-        return rerankStrategy;
+        return ragProperties.getRerankStrategy();
     }
 }
 

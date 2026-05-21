@@ -1,5 +1,6 @@
 package com.zjw.rag;
 
+import com.zjw.config.RagConfig;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.store.embedding.EmbeddingMatch;

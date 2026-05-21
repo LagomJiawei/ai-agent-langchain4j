@@ -116,6 +116,13 @@
             <version>33.2.1-jre</version>
         </dependency>
 
+        <!-- Spring Boot 配置处理器 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+
     </dependencies>
 
     <build>

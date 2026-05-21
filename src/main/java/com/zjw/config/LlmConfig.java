@@ -37,7 +37,7 @@ public class LlmConfig {
                 .baseUrl(llmProperties.getBaseUrl())
                 .modelName(llmProperties.getModelName())
                 .temperature(0.7)
-                .timeout(Duration.ofSeconds(60))
+                .timeout(llmProperties.getTimeout())
                 .logRequests(false)
                 .logResponses(false)
                 .build();
@@ -53,7 +53,7 @@ public class LlmConfig {
                 .baseUrl(llmProperties.getBaseUrl())
                 .modelName(llmProperties.getModelName())
                 .temperature(0.7)
-                .timeout(Duration.ofSeconds(60))
+                .timeout(llmProperties.getTimeout())
                 .build();
     }
 

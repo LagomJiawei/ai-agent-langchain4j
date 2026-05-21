@@ -35,7 +35,7 @@ public class RagPipelineService {
     @Resource
     private DocumentReranker documentReranker;
 
-    static final String GENERATION_PROMPT = """
+    public static final String GENERATION_PROMPT = """
             你是一位专业的理财顾问。请基于以下参考资料回答用户的问题。
 
             【参考资料】

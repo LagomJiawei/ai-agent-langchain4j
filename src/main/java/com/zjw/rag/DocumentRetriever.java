@@ -1,5 +1,6 @@
 package com.zjw.rag;
 
+import com.zjw.config.RagConfig;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;

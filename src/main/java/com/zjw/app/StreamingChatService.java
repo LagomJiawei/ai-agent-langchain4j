@@ -2,10 +2,9 @@ package com.zjw.app;
 
 import com.zjw.rag.ParallelRagPipelineService;
 import com.zjw.rag.RagPipelineService;
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.model.StreamingResponseHandler;
 import dev.langchain4j.model.chat.StreamingChatLanguageModel;
-import dev.langchain4j.model.chat.request.ChatRequest;
-import dev.langchain4j.model.chat.response.ChatResponse;
-import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.output.Response;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -53,25 +52,25 @@ public class StreamingChatService {
                 long start = System.currentTimeMillis();
                 StringBuilder fullAnswer = new StringBuilder();
 
-                streamingChatModel.generate(query, new StreamingChatResponseHandler() {
+                streamingChatModel.generate(query, new StreamingResponseHandler<AiMessage>() {
                     @Override
-                    public void onPartialResponse(String partialResponse) {
+                    public void onNext(String token) {
                         try {
                             if (firstTokenTime.get() == 0) {
                                 firstTokenTime.set(System.currentTimeMillis());
                                 log.debug("【流式】首 Token 耗时: {}ms", firstTokenTime.get() - start);
                             }
-                            fullAnswer.append(partialResponse);
+                            fullAnswer.append(token);
                             emitter.send(SseEmitter.event()
                                     .name("token")
-                                    .data(partialResponse));
+                                    .data(token));
                         } catch (IOException e) {
                             log.warn("发送流式数据失败: {}", e.getMessage());
                         }
                     }
 
                     @Override
-                    public void onCompleteResponse(ChatResponse completeResponse) {
+                    public void onComplete(Response<AiMessage> response) {
                         try {
                             emitter.send(SseEmitter.event()
                                     .name("complete")
@@ -134,9 +133,9 @@ public class StreamingChatService {
                 // 2. 流式生成答案
                 String prompt = String.format(RagPipelineService.GENERATION_PROMPT, context, query);
 
-                streamingChatModel.generate(prompt, new StreamingChatResponseHandler() {
+                streamingChatModel.generate(prompt, new StreamingResponseHandler<AiMessage>() {
                     @Override
-                    public void onPartialResponse(String partialResponse) {
+                    public void onNext(String token) {
                         try {
                             if (firstTokenTime.get() == 0) {
                                 firstTokenTime.set(System.currentTimeMillis());
@@ -145,17 +144,17 @@ public class StreamingChatService {
                                         retrievalTime,
                                         firstTokenTime.get() - start - retrievalTime);
                             }
-                            fullAnswer.append(partialResponse);
+                            fullAnswer.append(token);
                             emitter.send(SseEmitter.event()
                                     .name("token")
-                                    .data(partialResponse));
+                                    .data(token));
                         } catch (IOException e) {
                             log.warn("发送流式数据失败: {}", e.getMessage());
                         }
                     }
 
                     @Override
-                    public void onCompleteResponse(ChatResponse completeResponse) {
+                    public void onComplete(Response<AiMessage> response) {
                         try {
                             emitter.send(SseEmitter.event()
                                     .name("complete")

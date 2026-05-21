@@ -1,0 +1,83 @@
+# ========== 开发环境配置 ==========
+# 激活方式:
+#   1. 环境变量: SPRING_PROFILES_ACTIVE=dev
+#   2. JVM参数: -Dspring.profiles.active=dev
+#   3. 命令行: --spring.profiles.active=dev
+
+# Redis - 开发环境可选
+redis:
+  enabled: false  # 开发环境关闭 Redis，使用本地缓存
+
+# 日志配置 - 开发环境详细日志
+logging:
+  level:
+    root: INFO
+    com.zjw: DEBUG
+    dev.langchain4j: DEBUG
+    org.springframework.ai: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# 服务器配置 - 开发环境
+server:
+  port: 8081
+  # 开启热重载（需配合 spring-boot-devtools）
+  servlet:
+    context-path: /
+
+# LLM 配置 - 开发环境（可使用测试 Key 或低成本模型）
+llm:
+  dashscope:
+    model-name: qwen-turbo  # 开发环境使用成本更低的模型
+    # 超时配置宽松一些
+    timeout: 60s
+
+# Milvus - 开发环境关闭（使用内存向量数据库）
+milvus:
+  enabled: false
+
+# 聊天记忆 - 开发环境使用文件存储
+chat-memory:
+  store-type: file
+  base-dir: ${user.dir}/chat-memory
+  max-messages: 20  # 保留较多消息便于调试
+
+# RAG 配置 - 开发环境优化调试
+rag:
+  top-k: 3                    # 减少返回数量加快调试
+  recall-k: 10                # 减少召回数量
+  similarity-threshold: 0.6   # 降低阈值便于观察更多结果
+  parallel-enabled: false     # 开发环境关闭并行，便于排查问题
+  cache-enabled: false        # 开发环境关闭缓存，确保每次都是最新结果
+  redis-cache:
+    enabled: false
+  semantic-cache:
+    enabled: false
+
+# Agent 配置 - 开发环境
+agent:
+  max-iterations: 5           # 减少迭代次数加快响应
+  enable-loop-detection: true
+  loop-threshold: 2
+
+# 工具限流 - 开发环境放宽限制
+tool:
+  rate-limit:
+    enabled: false            # 开发环境关闭限流，方便测试
+  circuit-breaker:
+    fail-threshold: 10        # 提高熔断阈值
+    recovery-seconds: 10      # 缩短恢复时间
+
+# SearchAPI - 开发环境
+searchapi:
+  num-results: 3              # 减少返回数量
+
+# Actuator - 开发环境开启监控端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always

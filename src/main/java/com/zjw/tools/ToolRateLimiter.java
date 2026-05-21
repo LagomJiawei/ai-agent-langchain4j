@@ -58,8 +58,7 @@ public class ToolRateLimiter {
      * 尝试获取执行许可（带超时）
      */
     public boolean tryAcquire(String toolName, long timeout, TimeUnit unit) {
-        // 1. 检查熔断状态
-        CircuitBreaker cb = circuitBreakers.computeIfAbsent(toolName, k -> new CircuitBreaker());
+        CircuitBreaker cb = circuitBreakers.computeIfAbsent(toolName, k -> new CircuitBreaker(toolName));
         if (cb.isOpen()) {
             log.warn("【工具限流】工具 {} 已熔断，跳过执行", toolName);
             return false;
@@ -135,9 +134,14 @@ public class ToolRateLimiter {
     private class CircuitBreaker {
         enum State { CLOSED, OPEN, HALF_OPEN }
 
+        private final String toolName;
         final AtomicLong failCount = new AtomicLong(0);
         volatile State state = State.CLOSED;
         volatile long openTime = 0;
+
+        CircuitBreaker(String toolName) {
+            this.toolName = toolName;
+        }
 
         boolean isOpen() {
             if (state == State.OPEN) {

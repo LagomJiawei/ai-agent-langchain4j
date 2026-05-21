@@ -1,0 +1,128 @@
+# ========== 生产环境配置 ==========
+# 激活方式:
+#   1. 环境变量: SPRING_PROFILES_ACTIVE=prod
+#   2. JVM参数: -Dspring.profiles.active=prod
+#   3. K8s ConfigMap 中配置
+
+# Redis - 生产环境启用分布式缓存
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST:redis.prod.svc.cluster.local}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:CHANGE_ME}
+      database: 0
+      lettuce:
+        pool:
+          max-active: 50        # 最大连接数
+          max-idle: 20          # 最大空闲连接
+          min-idle: 5           # 最小空闲连接
+          max-wait: 3000ms      # 最大等待时间
+# Redis - 生产环境启用分布式缓存
+redis:
+  enabled: true  # 生产环境启用 Redis
+
+
+# 日志配置 - 生产环境精简日志
+logging:
+  level:
+    root: WARN
+    com.zjw: INFO
+    dev.langchain4j: WARN
+    org.springframework.ai: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: /var/log/ai-agent/application.log
+
+# 服务器配置 - 生产环境
+server:
+  port: 8080
+  servlet:
+    context-path: /
+  tomcat:
+    threads:
+      max: 200              # 最大线程数
+      min-spare: 20         # 最小空闲线程
+    accept-count: 100       # 等待队列长度
+    max-connections: 8192   # 最大连接数
+
+# LLM 配置 - 生产环境（必须通过环境变量注入真实 API Key）
+llm:
+  dashscope:
+    model-name: qwen-max    # 生产环境使用高性能模型
+    timeout: 30s            # 严格控制超时
+
+# Milvus - 生产环境启用分布式向量数据库
+milvus:
+  enabled: true
+  host: ${MILVUS_HOST:milvus.prod.svc.cluster.local}
+  port: ${MILVUS_PORT:19530}
+  collection-name: rag_documents_prod
+  dimension: 384
+  index-type: IVF_FLAT
+  nprobe: 20                # 提高检索精度
+
+# 聊天记忆 - 生产环境使用 Redis 存储
+chat-memory:
+  store-type: redis         # 使用 Redis 支持多实例共享
+  max-messages: 10          # 减少消息数量节省存储
+  base-dir: /data/chat-memory  # 持久化备份路径
+
+# RAG 配置 - 生产环境优化性能
+rag:
+  top-k: 5
+  recall-k: 20
+  similarity-threshold: 0.75  # 提高阈值保证质量
+  parallel-enabled: true      # 启用并行提升性能
+  cache-enabled: true         # 启用本地缓存
+  redis-cache:
+    enabled: true             # 启用分布式缓存
+  semantic-cache:
+    enabled: true
+    threshold: 0.9
+
+# Agent 配置 - 生产环境
+agent:
+  max-iterations: 10
+  enable-loop-detection: true
+  loop-threshold: 2
+
+# 工具限流 - 生产环境严格限流
+tool:
+  rate-limit:
+    enabled: true
+  limit:
+    concurrency: 5
+    qps: 10
+  circuit-breaker:
+    fail-threshold: 3         # 降低阈值快速熔断
+    recovery-seconds: 60      # 延长恢复时间
+
+# SearchAPI - 生产环境
+searchapi:
+  num-results: 5
+
+# Actuator - 生产环境安全配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics  # 仅暴露必要端点
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized   # 仅授权用户可见详情
+  security:
+    enabled: true
+  # JVM 性能监控
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  # 健康检查
+  health:
+    redis:
+      enabled: true
+    milvus:
+      enabled: true

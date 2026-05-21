@@ -5,10 +5,15 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 /**
@@ -42,7 +47,7 @@ public class ParallelRagPipelineService {
     @Resource
     private ChatLanguageModel chatLanguageModel;
 
-    @Resource(required = false)
+    @Autowired(required = false)
     private RagResultSemanticCache semanticCache;
 
     // 异步执行器（虚拟线程，Java 21+）

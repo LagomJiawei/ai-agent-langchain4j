@@ -1,10 +1,10 @@
 package com.zjw.tools;
 
+import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.service.tool.ToolExecutor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -22,7 +22,7 @@ public class RateLimitedToolExecutor implements ToolExecutor {
     private final ToolRateLimiter rateLimiter;
 
     @Override
-    public String execute(String userQuery, Map<String, Object> parameters) {
+    public String execute(ToolExecutionRequest request, Object context) {
         // 1. 尝试获取限流许可
         if (!rateLimiter.tryAcquire(toolName, 3, TimeUnit.SECONDS)) {
             log.warn("工具 {} 限流触发，跳过执行", toolName);
@@ -31,7 +31,7 @@ public class RateLimitedToolExecutor implements ToolExecutor {
 
         try {
             // 2. 执行真实工具
-            String result = delegate.execute(userQuery, parameters);
+            String result = delegate.execute(request, context);
             rateLimiter.recordSuccess(toolName);
             log.debug("工具 {} 执行成功", toolName);
             return result;
