@@ -43,3 +43,6 @@ logs/
 # Build
 build/
 dist/
+
+# Project files
+项目描述.md
